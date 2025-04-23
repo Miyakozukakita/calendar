@@ -67,7 +67,7 @@ function renderCalendar() {
 
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
   const headerRow = document.createElement("div");
-  headerRow.className = "calendar-row header";
+  headerRow.className = "calendar-row header small";
 
   weekdays.forEach((day, idx) => {
     const cell = document.createElement("div");
@@ -118,8 +118,8 @@ function renderCalendar() {
 
         cell.addEventListener("click", () => {
           selectedDate = new Date(cellDate);
-          renderCalendar(); // 色付け更新のみ
-          renderDayData(selectedDate); // 既存表示を更新しないよう分離
+          renderCalendar();
+          renderDayData(selectedDate);
         });
       } else {
         cell.classList.add("disabled");
@@ -130,7 +130,6 @@ function renderCalendar() {
     calendar.appendChild(row);
   }
 
-  // 表示用に初回読み込み
   renderDayData(selectedDate);
 }
 
