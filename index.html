@@ -4,71 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>水やりカレンダー</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 1em;
-    }
-    #calendar-header {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1em;
-      margin-bottom: 0.5em;
-    }
-    #calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 1px;
-    }
-    .calendar-cell {
-      border: 1px solid #ccc;
-      min-height: 60px;
-      padding: 4px;
-      font-size: 12px;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: flex-start;
-    }
-    .calendar-cell .am-label, .calendar-cell .pm-label {
-      display: block;
-      font-size: 10px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.2;
-      margin-top: 2px;
-    }
-    .saturday {
-      color: blue;
-    }
-    .sunday {
-      color: red;
-    }
-    .today {
-      background-color: #ffe;
-      font-weight: bold;
-    }
-    .holiday {
-      background-color: #fdd;
-    }
-    .button-group {
-      margin: 0.5em 0;
-    }
-    @media (max-width: 600px) {
-      .calendar-cell {
-        min-height: 50px;
-        font-size: 10px;
-        padding: 2px;
-      }
-      .calendar-cell .am-label, .calendar-cell .pm-label {
-        font-size: 9px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>水やり記録カレンダー</h1>
@@ -88,7 +24,7 @@
   <!-- 名前入力 -->
   <input type="text" id="nameInput" placeholder="名前を入力" />
 
-  <!-- 水やりボタン -->
+  <!-- 担当登録ボタン -->
   <div class="button-group">
     <button id="amBtn">午前 担当登録</button>
     <button id="pmBtn">午後 担当登録</button>
