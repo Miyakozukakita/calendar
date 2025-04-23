@@ -107,26 +107,26 @@ function renderCalendar(date) {
     cell.appendChild(dateSpan);
 
     if (info) {
-      if (info.am) {
-        const am = document.createElement("div");
-        am.textContent = `AM:${info.am}`;
-        am.className = "am";
-        cell.appendChild(am);
-      } else if (info.time1) {
+      if (info.time1) {
         const am = document.createElement("div");
         am.textContent = info.time1;
         am.className = "am";
         cell.appendChild(am);
+      }else if (info.am) {
+        const am = document.createElement("div");
+        am.textContent = `AM:${info.am}`;
+        am.className = "am";
+        cell.appendChild(am);
       }
 
-      if (info.pm) {
-        const pm = document.createElement("div");
-        pm.textContent = `PM:${info.pm}`;
-        pm.className = "pm";
-        cell.appendChild(pm);
-      } else if (info.time2) {
+      if (info.time2) {
         const pm = document.createElement("div");
         pm.textContent = info.time2;
+        pm.className = "pm";
+        cell.appendChild(pm);
+      }else if (info.pm) {
+        const pm = document.createElement("div");
+        pm.textContent = `PM:${info.pm}`;
         pm.className = "pm";
         cell.appendChild(pm);
       }
