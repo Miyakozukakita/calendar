@@ -1,92 +1,65 @@
 body {
   font-family: sans-serif;
   text-align: center;
-  margin: 0;
-  padding: 1em;
-  background-color: #f9f9f9;
-}
-
-h1 {
-  font-size: 1.5em;
-  margin-bottom: 1em;
-}
-
-#calendar-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1em;
-  margin-bottom: 0.5em;
+  padding: 1rem;
 }
 
 #calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  max-width: 400px;
-  margin: 0 auto 1em;
+  gap: 4px;
+  margin-top: 1rem;
 }
 
-.weekday {
-  font-weight: bold;
-}
-
-.day {
-  background-color: #fff;
-  border: 1px solid #ddd;
+.calendar-cell {
+  border: 1px solid #ccc;
   padding: 4px;
-  border-radius: 5px;
-  font-size: 0.8em;
+  font-size: 0.75rem;
+  height: 60px;
   position: relative;
-  overflow: hidden;
+  cursor: pointer;
+}
+
+.calendar-cell:hover {
+  background-color: #eef;
 }
 
 .today {
-  outline: 2px solid #4caf50;
+  background-color: #ffe0e0;
 }
 
 .holiday {
-  color: red;
-}
-
-.sunday {
-  color: red;
+  background-color: #fdd;
 }
 
 .saturday {
   color: blue;
 }
 
-.am {
-  color: blue;
-  font-size: 0.75em;
+.sunday {
+  color: red;
 }
 
-.pm {
+.am-label {
+  color: blue;
+  display: block;
+  font-size: 0.65rem;
+}
+
+.pm-label {
   color: red;
-  font-size: 0.75em;
+  display: block;
+  font-size: 0.65rem;
+}
+
+#calendar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .button-group {
-  margin: 0.5em 0;
-}
-
-button {
-  padding: 6px 12px;
-  font-size: 1em;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #45a049;
-}
-
-input {
-  padding: 5px;
-  font-size: 1em;
-  margin-bottom: 0.5em;
+  margin-top: 0.5rem;
 }
