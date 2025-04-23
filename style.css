@@ -8,16 +8,19 @@ body {
 
 h1 {
   font-size: 1.5em;
-  margin-bottom: 1em;
+  margin-bottom: 0.5em;
 }
 
 #calendar-header {
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 1em;
   margin-bottom: 0.5em;
-  gap: 10px;
-  font-size: 1.2em;
+}
+
+#currentMonth {
+  font-weight: bold;
 }
 
 #calendar {
@@ -25,66 +28,63 @@ h1 {
   grid-template-columns: repeat(7, 1fr);
   gap: 5px;
   max-width: 400px;
-  margin: 0 auto 1em;
+  margin: 1em auto;
 }
 
 .day {
   background-color: #fff;
   border: 1px solid #ddd;
-  padding: 6px;
+  padding: 5px;
   border-radius: 5px;
-  font-size: 0.8em;
-  cursor: pointer;
-  white-space: normal;
-  line-height: 1.2;
-  overflow-wrap: break-word;
+  font-size: 0.7em;
+  height: 60px;
+  position: relative;
+  overflow: hidden;
 }
 
-.day .am {
-  color: #007bff;
+.day span {
   display: block;
-  font-size: 0.75em;
 }
 
-.day .pm {
-  color: #e53935;
-  display: block;
-  font-size: 0.75em;
+.am {
+  color: blue;
+  font-size: 0.7em;
 }
 
-.day.holiday {
+.pm {
+  color: red;
+  font-size: 0.7em;
+}
+
+.holiday {
   color: red;
 }
 
-.selected {
-  outline: 2px solid #4caf50;
-}
-
-.button-group {
-  margin-bottom: 1em;
-}
-
 button {
-  padding: 10px 20px;
+  padding: 8px 15px;
   font-size: 1em;
+  margin: 5px;
   background-color: #4caf50;
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  margin: 5px;
 }
 
 button:hover {
   background-color: #45a049;
 }
 
-input[type="text"] {
+#nameInput {
+  margin-bottom: 10px;
   padding: 8px;
   font-size: 1em;
-  margin-bottom: 1em;
-  border-radius: 5px;
-  border: 1px solid #ccc;
   width: 80%;
   max-width: 300px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.button-group {
+  margin-top: 5px;
 }
