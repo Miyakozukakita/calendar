@@ -60,4 +60,26 @@ function handleWatering(time) {
   const record = wateringRecords.get(key) || {};
   record[time] = name;
   wateringRecords.set(key, record);
-  renderCalendar
+  renderCalendar(selectedDate);
+}
+
+function handleDelete(time) {
+  const key = selectedDate.toDateString();
+  const record = wateringRecords.get(key);
+  if (record && record[time]) {
+    delete record[time];
+    if (!record.am && !record.pm) {
+      wateringRecords.delete(key);
+    } else {
+      wateringRecords.set(key, record);
+    }
+    renderCalendar(selectedDate);
+  }
+}
+
+amBtn.addEventListener("click", () => handleWatering("am"));
+pmBtn.addEventListener("click", () => handleWatering("pm"));
+amDeleteBtn.addEventListener("click", () => handleDelete("am"));
+pmDeleteBtn.addEventListener("click", () => handleDelete("pm"));
+
+renderCalendar(selectedDate);
