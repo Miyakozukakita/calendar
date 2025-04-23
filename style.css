@@ -11,6 +11,14 @@ h1 {
   margin-bottom: 1em;
 }
 
+input[type="date"] {
+  padding: 10px;
+  font-size: 1em;
+  margin-bottom: 1em;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
 #calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
