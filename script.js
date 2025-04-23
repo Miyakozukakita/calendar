@@ -154,7 +154,7 @@ async function handleRegister(timeType) {
   const key = getDateKey(selectedDate);
   const docRef = doc(db, "water-records", key);
   await setDoc(docRef, {
-    [timeType === "am" ? "nameAM" : "namePM"]: name
+    [timeType === "am" ? "am" : "pm"]: name
   }, { merge: true });
   await fetchMonthData(currentDate);
   renderCalendar(currentDate);
@@ -165,7 +165,7 @@ async function handleDelete(timeType) {
   const key = getDateKey(selectedDate);
   const docRef = doc(db, "water-records", key);
   await updateDoc(docRef, {
-    [timeType === "am" ? "nameAM" : "namePM"]: deleteField()
+    [timeType === "am" ? "am" : "pm"]: deleteField()
   });
   await fetchMonthData(currentDate);
   renderCalendar(currentDate);
