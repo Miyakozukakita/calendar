@@ -1,61 +1,75 @@
 body {
   font-family: sans-serif;
   text-align: center;
-  padding: 1em;
-  background: #f9f9f9;
+  margin: 10px;
 }
 
 #calendar-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 1em 0;
-  gap: 1em;
+  margin-bottom: 10px;
 }
 
 #calendar {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
   gap: 2px;
-  margin-bottom: 1em;
-  max-width: 100%;
 }
 
-.day {
+.calendar-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-cell {
   border: 1px solid #ccc;
-  padding: 4px;
   min-height: 60px;
-  font-size: 0.65rem;
   position: relative;
+  font-size: 12px;
   overflow: hidden;
-  background: #fff;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
-.day .date {
+.calendar-cell .day-number {
   font-weight: bold;
-  font-size: 0.75rem;
+  font-size: 14px;
 }
 
-.day.saturday { color: blue; }
-.day.sunday, .day.holiday { color: red; }
+.weekday {
+  font-weight: bold;
+  background: #f0f0f0;
+}
 
-.am {
+.saturday {
   color: blue;
-  font-size: 0.7rem;
 }
-.pm {
+
+.sunday {
   color: red;
-  font-size: 0.7rem;
+}
+
+.selected {
+  background: yellow;
+}
+
+.am-label {
+  color: blue;
+  font-size: 11px;
+  word-break: break-word;
+}
+
+.pm-label {
+  color: red;
+  font-size: 11px;
+  word-break: break-word;
 }
 
 .button-group {
-  margin: 0.5em 0;
+  margin-top: 10px;
 }
 
-input[type="text"] {
-  margin: 0.5em 0;
-  padding: 0.3em;
-  font-size: 1em;
-  width: 80%;
-  max-width: 300px;
+#nameInput {
+  margin-top: 10px;
+  width: 200px;
+  padding: 5px;
 }
