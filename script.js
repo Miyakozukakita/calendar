@@ -107,9 +107,9 @@ function renderCalendar(date) {
     cell.appendChild(dateSpan);
 
     if (info) {
-      if (info.nameAM) {
+      if (info.am) {
         const am = document.createElement("div");
-        am.textContent = `AM:${info.nameAM}`;
+        am.textContent = `AM:${info.am}`;
         am.className = "am";
         cell.appendChild(am);
       } else if (info.time1) {
@@ -119,9 +119,9 @@ function renderCalendar(date) {
         cell.appendChild(am);
       }
 
-      if (info.namePM) {
+      if (info.pm) {
         const pm = document.createElement("div");
-        pm.textContent = `PM:${info.namePM}`;
+        pm.textContent = `PM:${info.pm}`;
         pm.className = "pm";
         cell.appendChild(pm);
       } else if (info.time2) {
