@@ -1,88 +1,46 @@
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5f5f5;
+  font-family: sans-serif;
+  text-align: center;
   margin: 0;
-  padding: 20px;
-}
-
-.container {
-  max-width: 600px;
-  margin: auto;
-  background-color: #fff;
-  border-radius: 10px;
-  padding: 30px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 1em;
+  background-color: #f9f9f9;
 }
 
 h1 {
-  text-align: center;
-  margin-bottom: 10px;
+  font-size: 1.5em;
+  margin-bottom: 1em;
 }
 
-.date-select {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 20px;
-  gap: 10px;
+#calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  max-width: 400px;
+  margin: 0 auto 1em;
 }
 
-input[type="date"] {
-  padding: 6px 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+.day {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 0.9em;
 }
 
-.button-block {
-  text-align: center;
-  margin-bottom: 20px;
+.watered {
+  background-color: #b2f2bb;
 }
 
 button {
+  padding: 10px 20px;
+  font-size: 1em;
   background-color: #4caf50;
   color: white;
-  padding: 10px 16px;
-  font-size: 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
 }
 
 button:hover {
   background-color: #45a049;
-}
-
-.record-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #e8f5e9;
-  padding: 10px 15px;
-  margin: 6px 0;
-  border-radius: 6px;
-}
-
-.label {
-  font-weight: bold;
-  margin-right: 10px;
-  min-width: 60px;
-}
-
-.time {
-  flex-grow: 1;
-  text-align: left;
-}
-
-.record-row button {
-  background-color: #2196f3;
-  padding: 6px 10px;
-  font-size: 14px;
-  border-radius: 6px;
-  margin-left: 6px;
-}
-
-.record-row button:hover {
-  background-color: #1e88e5;
 }
