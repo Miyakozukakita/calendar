@@ -3,10 +3,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebas
 import {
   getFirestore,
   doc,
-  getDoc,
   setDoc,
   updateDoc,
-  deleteField
+  deleteField,
+  getDocs,
+  collection,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -31,7 +34,7 @@ const nameInput = document.getElementById("nameInput");
 
 function getDateKey(date) {
   const d = new Date(date);
-  d.setHours(d.getHours() + 9); // JSTに補正
+  d.setHours(d.getHours() + 9);
   return d.toISOString().split("T")[0];
 }
 
@@ -51,17 +54,21 @@ async function fetchMonthData(date) {
   calendarData = {};
   const year = date.getFullYear();
   const month = date.getMonth();
-  const first = new Date(year, month, 1);
-  const last = new Date(year, month + 1, 0);
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startKey = getDateKey(firstDay);
+  const endKey = getDateKey(lastDay);
 
-  for (let d = new Date(first); d <= last; d.setDate(d.getDate() + 1)) {
-    const key = getDateKey(d);
-    const docRef = doc(db, "water-records", key);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      calendarData[key] = docSnap.data();
-    }
-  }
+  const q = query(
+    collection(db, "water-records"),
+    where("__name__", ">=", startKey),
+    where("__name__", "<=", endKey)
+  );
+
+  const snapshot = await getDocs(q);
+  snapshot.forEach(doc => {
+    calendarData[doc.id] = doc.data();
+  });
 }
 
 function renderCalendar(date) {
@@ -94,13 +101,11 @@ function renderCalendar(date) {
     const cell = document.createElement("div");
     cell.className = "day";
     const thisDate = new Date(year, month, i);
-    cell.dataset.date = thisDate;
+    const key = getDateKey(thisDate);
+    const info = calendarData[key];
 
     if (isSameDate(thisDate, new Date())) cell.classList.add("today");
     if (isSameDate(thisDate, selectedDate)) cell.classList.add("selected");
-
-    const key = getDateKey(thisDate);
-    const info = calendarData[key];
 
     const dateSpan = document.createElement("div");
     dateSpan.textContent = i;
@@ -112,9 +117,9 @@ function renderCalendar(date) {
         am.textContent = info.time1;
         am.className = "am";
         cell.appendChild(am);
-      } else if (info.am) {
+      } else if (info.nameAM) {
         const am = document.createElement("div");
-        am.textContent = `AM:${info.am}`;
+        am.textContent = `AM:${info.nameAM}`;
         am.className = "am";
         cell.appendChild(am);
       }
@@ -124,14 +129,15 @@ function renderCalendar(date) {
         pm.textContent = info.time2;
         pm.className = "pm";
         cell.appendChild(pm);
-      } else if (info.pm) {
+      } else if (info.namePM) {
         const pm = document.createElement("div");
-        pm.textContent = `PM:${info.pm}`;
+        pm.textContent = `PM:${info.namePM}`;
         pm.className = "pm";
         cell.appendChild(pm);
       }
     }
 
+    cell.dataset.date = thisDate;
     cell.addEventListener("click", () => {
       selectedDate = thisDate;
       document.querySelectorAll(".day").forEach(d => d.classList.remove("selected"));
@@ -142,11 +148,6 @@ function renderCalendar(date) {
   }
 }
 
-async function updateCalendar(date) {
-  await fetchMonthData(date);
-  renderCalendar(date);
-}
-
 async function handleRegister(timeType) {
   const name = nameInput.value.trim();
   if (!name) return;
@@ -155,7 +156,8 @@ async function handleRegister(timeType) {
   await setDoc(docRef, {
     [timeType === "am" ? "nameAM" : "namePM"]: name
   }, { merge: true });
-  await updateCalendar(currentDate);
+  await fetchMonthData(currentDate);
+  renderCalendar(currentDate);
   nameInput.value = "";
 }
 
@@ -165,26 +167,34 @@ async function handleDelete(timeType) {
   await updateDoc(docRef, {
     [timeType === "am" ? "nameAM" : "namePM"]: deleteField()
   });
-  await updateCalendar(currentDate);
+  await fetchMonthData(currentDate);
+  renderCalendar(currentDate);
 }
 
-// 初期化
-updateCalendar(currentDate);
+// 初期表示
+(async () => {
+  await fetchMonthData(currentDate);
+  renderCalendar(currentDate);
+})();
 
+// イベント
 document.getElementById("amBtn").addEventListener("click", () => handleRegister("am"));
 document.getElementById("pmBtn").addEventListener("click", () => handleRegister("pm"));
 document.getElementById("amDeleteBtn").addEventListener("click", () => handleDelete("am"));
 document.getElementById("pmDeleteBtn").addEventListener("click", () => handleDelete("pm"));
-document.getElementById("prevMonth").addEventListener("click", () => {
+document.getElementById("prevMonth").addEventListener("click", async () => {
   currentDate.setMonth(currentDate.getMonth() - 1);
-  updateCalendar(currentDate);
+  await fetchMonthData(currentDate);
+  renderCalendar(currentDate);
 });
-document.getElementById("nextMonth").addEventListener("click", () => {
+document.getElementById("nextMonth").addEventListener("click", async () => {
   currentDate.setMonth(currentDate.getMonth() + 1);
-  updateCalendar(currentDate);
+  await fetchMonthData(currentDate);
+  renderCalendar(currentDate);
 });
-document.getElementById("todayBtn").addEventListener("click", () => {
+document.getElementById("todayBtn").addEventListener("click", async () => {
   currentDate = new Date();
   selectedDate = new Date();
-  updateCalendar(currentDate);
+  await fetchMonthData(currentDate);
+  renderCalendar(currentDate);
 });
