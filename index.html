@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- 記録アプリへボタン -->
+  <button id="recordAppBtn" class="top-right-btn">📘 記録アプリへ</button>
+
   <h1>水やり記録カレンダー</h1>
 
   <div id="calendar-header">
@@ -32,5 +35,10 @@
   </div>
 
   <script type="module" src="script.js"></script>
+  <script>
+    document.getElementById("recordAppBtn").addEventListener("click", () => {
+      window.location.href = "https://miyakozukakita.github.io/kouen.io/";
+    });
+  </script>
 </body>
 </html>
