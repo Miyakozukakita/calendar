@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import {
-  getFirestore, doc, getDoc, setDoc, updateDoc, deleteField
+  getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteField, collection
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -17,10 +17,19 @@ const db = getFirestore(app);
 
 let currentDate = new Date();
 let selectedDateStr = getDateStr(currentDate);
+let cachedRecords = {}; // 🔹 すべての記録をキャッシュ
 
 function getDateStr(date) {
   const d = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return d.toISOString().split('T')[0];
+}
+
+async function fetchAllRecords() {
+  const colRef = collection(db, "water-records");
+  const snapshot = await getDocs(colRef);
+  snapshot.forEach(docSnap => {
+    cachedRecords[docSnap.id] = docSnap.data();
+  });
 }
 
 function renderCalendar(date) {
@@ -47,9 +56,9 @@ function renderCalendar(date) {
 
   for (let dateNum = 1; dateNum <= lastDate; dateNum++) {
     const cellDate = new Date(year, month, dateNum);
+    const dateStr = getDateStr(cellDate);
     const cell = document.createElement("div");
     cell.className = "calendar-cell";
-    const dateStr = getDateStr(cellDate);
     const day = cellDate.getDay();
 
     if (day === 0) cell.classList.add("sunday");
@@ -60,48 +69,53 @@ function renderCalendar(date) {
     cell.dataset.date = dateStr;
     cell.addEventListener("click", () => {
       selectedDateStr = dateStr;
-      renderCalendar(date);
+      renderCalendar(currentDate); // 🔁 再描画して強調
     });
 
-    loadNamesToCell(dateStr, cell);
+    const data = cachedRecords[dateStr];
+    if (data) {
+      if (data.am) {
+        const am = document.createElement("span");
+        am.className = "am-label";
+        am.textContent = `AM: ${data.am}`;
+        cell.appendChild(am);
+      }
+      if (data.pm) {
+        const pm = document.createElement("span");
+        pm.className = "pm-label";
+        pm.textContent = `PM: ${data.pm}`;
+        cell.appendChild(pm);
+      }
+    }
+
     calendar.appendChild(cell);
   }
 }
 
-async function loadNamesToCell(dateStr, cell) {
-  const docRef = doc(db, "water-records", dateStr);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    if (data.am) {
-      const am = document.createElement("span");
-      am.className = "am-label";
-      am.textContent = `AM: ${data.am}`;
-      cell.appendChild(am);
-    }
-    if (data.pm) {
-      const pm = document.createElement("span");
-      pm.className = "pm-label";
-      pm.textContent = `PM: ${data.pm}`;
-      cell.appendChild(pm);
-    }
-  }
-}
-
-function updateName(time) {
+async function updateName(time) {
   const name = document.getElementById("nameInput").value.trim();
   if (!name) return alert("名前を入力してください");
+
   const docRef = doc(db, "water-records", selectedDateStr);
-  setDoc(docRef, { [time]: name }, { merge: true }).then(() => {
-    renderCalendar(currentDate);
-  });
+  await setDoc(docRef, { [time]: name }, { merge: true });
+
+  // 🔄 キャッシュ更新
+  cachedRecords[selectedDateStr] = {
+    ...(cachedRecords[selectedDateStr] || {}),
+    [time]: name
+  };
+  renderCalendar(currentDate);
 }
 
-function deleteName(time) {
+async function deleteName(time) {
   const docRef = doc(db, "water-records", selectedDateStr);
-  updateDoc(docRef, { [time]: deleteField() }).then(() => {
-    renderCalendar(currentDate);
-  });
+  await updateDoc(docRef, { [time]: deleteField() });
+
+  // 🔄 キャッシュ更新
+  if (cachedRecords[selectedDateStr]) {
+    delete cachedRecords[selectedDateStr][time];
+  }
+  renderCalendar(currentDate);
 }
 
 document.getElementById("amBtn").addEventListener("click", () => updateName("am"));
@@ -122,4 +136,7 @@ document.getElementById("todayBtn").addEventListener("click", () => {
   renderCalendar(currentDate);
 });
 
-renderCalendar(currentDate);
+(async () => {
+  await fetchAllRecords();
+  renderCalendar(currentDate);
+})();
