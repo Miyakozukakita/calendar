@@ -77,13 +77,13 @@ function renderCalendar(date) {
       if (data.am) {
         const am = document.createElement("span");
         am.className = "am-label";
-        am.textContent = `AM: ${data.am}`;
+        am.textContent = `AM:${data.am}`;
         cell.appendChild(am);
       }
       if (data.pm) {
         const pm = document.createElement("span");
         pm.className = "pm-label";
-        pm.textContent = `PM: ${data.pm}`;
+        pm.textContent = `PM:${data.pm}`;
         cell.appendChild(pm);
       }
     }
