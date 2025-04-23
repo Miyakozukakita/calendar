@@ -27,8 +27,8 @@ function renderCalendar(targetDate) {
     let content = `${i}`;
     const record = wateringRecords.get(key);
     if (record) {
-      if (record.am) content += `<br>午前：${record.am}`;
-      if (record.pm) content += `<br>午後：${record.pm}`;
+      if (record.am) content += `<br><span class="am">午前：${record.am}</span>`;
+      if (record.pm) content += `<br><span class="pm">午後：${record.pm}</span>`;
     }
 
     if (
