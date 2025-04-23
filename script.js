@@ -117,9 +117,9 @@ function renderCalendar(date) {
         am.textContent = info.time1;
         am.className = "am";
         cell.appendChild(am);
-      } else if (info.nameAM) {
+      } else if (info.am) {
         const am = document.createElement("div");
-        am.textContent = `AM:${info.nameAM}`;
+        am.textContent = `AM:${info.am}`;
         am.className = "am";
         cell.appendChild(am);
       }
@@ -129,9 +129,9 @@ function renderCalendar(date) {
         pm.textContent = info.time2;
         pm.className = "pm";
         cell.appendChild(pm);
-      } else if (info.namePM) {
+      } else if (info.pm) {
         const pm = document.createElement("div");
-        pm.textContent = `PM:${info.namePM}`;
+        pm.textContent = `PM:${info.pm}`;
         pm.className = "pm";
         cell.appendChild(pm);
       }
