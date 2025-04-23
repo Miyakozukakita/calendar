@@ -2,14 +2,14 @@ const calendar = document.getElementById("calendar");
 const nameInput = document.getElementById("nameInput");
 const amBtn = document.getElementById("amBtn");
 const pmBtn = document.getElementById("pmBtn");
+const amDeleteBtn = document.getElementById("amDeleteBtn");
+const pmDeleteBtn = document.getElementById("pmDeleteBtn");
 
 const today = new Date();
 const year = today.getFullYear();
 const month = today.getMonth();
 
 let selectedDate = new Date(year, month, today.getDate());
-
-// 各日の記録（午前・午後）を保持するMap
 const wateringRecords = new Map();
 
 function renderCalendar(targetDate) {
@@ -24,7 +24,6 @@ function renderCalendar(targetDate) {
     const thisDate = new Date(y, m, i);
     const key = thisDate.toDateString();
 
-    // 表示用内容作成
     let content = `${i}`;
     const record = wateringRecords.get(key);
     if (record) {
@@ -32,9 +31,6 @@ function renderCalendar(targetDate) {
       if (record.pm) content += `<br>午後：${record.pm}`;
     }
 
-    day.innerHTML = content;
-
-    // 選択ハイライト
     if (
       thisDate.getDate() === selectedDate.getDate() &&
       thisDate.getMonth() === selectedDate.getMonth() &&
@@ -43,6 +39,7 @@ function renderCalendar(targetDate) {
       day.classList.add("selected");
     }
 
+    day.innerHTML = content;
     day.addEventListener("click", () => {
       selectedDate = thisDate;
       renderCalendar(selectedDate);
@@ -61,15 +58,28 @@ function handleWatering(time) {
 
   const key = selectedDate.toDateString();
   const record = wateringRecords.get(key) || {};
-
   record[time] = name;
   wateringRecords.set(key, record);
-
   renderCalendar(selectedDate);
-  alert(`${selectedDate.toLocaleDateString()} の${time === "am" ? "午前" : "午後"}に ${name} さんが水やりしました！`);
+}
+
+function handleDelete(time) {
+  const key = selectedDate.toDateString();
+  const record = wateringRecords.get(key);
+  if (record && record[time]) {
+    delete record[time];
+    if (!record.am && !record.pm) {
+      wateringRecords.delete(key);
+    } else {
+      wateringRecords.set(key, record);
+    }
+    renderCalendar(selectedDate);
+  }
 }
 
 amBtn.addEventListener("click", () => handleWatering("am"));
 pmBtn.addEventListener("click", () => handleWatering("pm"));
+amDeleteBtn.addEventListener("click", () => handleDelete("am"));
+pmDeleteBtn.addEventListener("click", () => handleDelete("pm"));
 
 renderCalendar(selectedDate);
