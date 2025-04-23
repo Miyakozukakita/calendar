@@ -198,3 +198,6 @@ document.getElementById("todayBtn").addEventListener("click", async () => {
   await fetchMonthData(currentDate);
   renderCalendar(currentDate);
 });
+document.getElementById("recordAppBtn").addEventListener("click", () => {
+  window.location.href = "https://miyakozukakita.github.io/kouen.io/";
+});
