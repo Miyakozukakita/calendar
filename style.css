@@ -22,10 +22,31 @@ h1 {
 .day {
   background-color: #fff;
   border: 1px solid #ddd;
-  padding: 10px;
+  padding: 6px;
   border-radius: 5px;
-  font-size: 0.9em;
+  font-size: 0.8em;
   cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day .am {
+  color: #007bff; /* 青 */
+  display: block;
+  font-size: 0.75em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day .pm {
+  color: #e53935; /* 赤 */
+  display: block;
+  font-size: 0.75em;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
