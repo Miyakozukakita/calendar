@@ -1,11 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteField,
+  getFirestore, doc, getDoc, setDoc, updateDoc, deleteField
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -14,186 +9,197 @@ const firebaseConfig = {
   projectId: "miyakozuka-89982",
   storageBucket: "miyakozuka-89982.appspot.com",
   messagingSenderId: "80890323227",
-  appId: "1:80890323227:web:f5d79ddbddbe480f8a33be",
+  appId: "1:80890323227:web:f5d79ddbddbe480f8a33be"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let currentDate = new Date();
-let selectedDate = null;
-let calendarDataCache = {};
-
+const calendar = document.getElementById("calendar");
+const currentMonthEl = document.getElementById("currentMonth");
 const nameInput = document.getElementById("nameInput");
 const amBtn = document.getElementById("amBtn");
 const pmBtn = document.getElementById("pmBtn");
 const amDeleteBtn = document.getElementById("amDeleteBtn");
 const pmDeleteBtn = document.getElementById("pmDeleteBtn");
+const prevMonthBtn = document.getElementById("prevMonth");
+const nextMonthBtn = document.getElementById("nextMonth");
+const todayBtn = document.getElementById("todayBtn");
 
-function getDateKey(date) {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const day = date.getDate().toString().padStart(2, "0");
-  return `${year}-${month}-${day}`;
+let today = new Date();
+let selectedDate = new Date(today);
+let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+const holidayAPI = "https://holidays-jp.github.io/api/v1/date.json";
+let holidayMap = {};
+
+async function fetchHolidays() {
+  try {
+    const res = await fetch(holidayAPI);
+    const json = await res.json();
+    holidayMap = json;
+  } catch (e) {
+    console.warn("祝日の取得に失敗しました", e);
+  }
 }
 
-function renderCalendar(date) {
-  const calendar = document.getElementById("calendar");
+function formatDate(date) {
+  const d = new Date(date);
+  d.setHours(d.getHours() + 9); // UTC→JST
+  return d.toISOString().split("T")[0];
+}
+
+function isSameDate(d1, d2) {
+  return d1.getFullYear() === d2.getFullYear() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getDate() === d2.getDate();
+}
+
+function renderCalendar() {
   calendar.innerHTML = "";
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  currentMonthEl.textContent = `${year}年${month + 1}月`;
 
-  const year = date.getFullYear();
-  const month = date.getMonth();
   const firstDay = new Date(year, month, 1);
-  const startDay = firstDay.getDay();
   const lastDate = new Date(year, month + 1, 0).getDate();
-
-  document.getElementById("currentMonth").textContent = `${year}年${month + 1}月`;
+  const startDay = firstDay.getDay();
 
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-  const header = document.createElement("div");
-  header.className = "calendar-row header";
-  weekdays.forEach((day, i) => {
+  const headerRow = document.createElement("div");
+  headerRow.className = "calendar-row header";
+
+  weekdays.forEach((day, idx) => {
     const cell = document.createElement("div");
-    cell.className = `calendar-cell weekday ${i === 0 ? "sunday" : i === 6 ? "saturday" : ""}`;
+    cell.className = "calendar-cell weekday";
+    if (idx === 0) cell.classList.add("sunday");
+    if (idx === 6) cell.classList.add("saturday");
     cell.textContent = day;
-    header.appendChild(cell);
+    headerRow.appendChild(cell);
   });
-  calendar.appendChild(header);
+  calendar.appendChild(headerRow);
 
-  let row = document.createElement("div");
-  row.className = "calendar-row";
+  let date = 1 - startDay;
+  for (let i = 0; i < 6; i++) {
+    const row = document.createElement("div");
+    row.className = "calendar-row";
 
-  for (let i = 0; i < startDay; i++) {
-    const cell = document.createElement("div");
-    cell.className = "calendar-cell empty";
-    row.appendChild(cell);
+    for (let j = 0; j < 7; j++) {
+      const cellDate = new Date(year, month, date);
+      const cell = document.createElement("div");
+      cell.className = "calendar-cell";
+      const dateStr = formatDate(cellDate);
+
+      if (cellDate.getMonth() === month) {
+        const isToday = isSameDate(cellDate, today);
+        const isSelected = isSameDate(cellDate, selectedDate);
+        if (isToday) cell.classList.add("today");
+        if (isSelected) cell.classList.add("selected");
+
+        if (j === 0) cell.classList.add("sunday");
+        if (j === 6) cell.classList.add("saturday");
+        if (holidayMap[dateStr]) cell.classList.add("holiday");
+
+        const dayNum = document.createElement("div");
+        dayNum.className = "date-number";
+        dayNum.textContent = cellDate.getDate();
+        cell.appendChild(dayNum);
+
+        const amDiv = document.createElement("div");
+        amDiv.className = "record am";
+        amDiv.id = `${dateStr}-am`;
+
+        const pmDiv = document.createElement("div");
+        pmDiv.className = "record pm";
+        pmDiv.id = `${dateStr}-pm`;
+
+        cell.appendChild(amDiv);
+        cell.appendChild(pmDiv);
+
+        cell.addEventListener("click", () => {
+          selectedDate = new Date(cellDate);
+          renderCalendar(); // 色付け更新のみ
+          renderDayData(selectedDate); // 既存表示を更新しないよう分離
+        });
+      } else {
+        cell.classList.add("disabled");
+      }
+      row.appendChild(cell);
+      date++;
+    }
+    calendar.appendChild(row);
   }
 
-  for (let day = 1; day <= lastDate; day++) {
-    if (row.children.length === 7) {
-      calendar.appendChild(row);
-      row = document.createElement("div");
-      row.className = "calendar-row";
+  // 表示用に初回読み込み
+  renderDayData(selectedDate);
+}
+
+async function renderDayData(dateObj) {
+  const dateStr = formatDate(dateObj);
+  const docRef = doc(db, "water-records", dateStr);
+  const docSnap = await getDoc(docRef);
+
+  const amDiv = document.getElementById(`${dateStr}-am`);
+  const pmDiv = document.getElementById(`${dateStr}-pm`);
+
+  if (!amDiv || !pmDiv) return;
+
+  amDiv.textContent = "";
+  pmDiv.textContent = "";
+
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    if (data.time1) {
+      amDiv.textContent = data.time1;
+    } else if (data.am) {
+      amDiv.textContent = `AM:${data.am}`;
     }
 
-    const cellDate = new Date(year, month, day);
-    const cellKey = getDateKey(cellDate);
-    const cell = document.createElement("div");
-    cell.className = "calendar-cell";
-    cell.dataset.date = cellKey;
-
-    const weekday = cellDate.getDay();
-    if (weekday === 0) cell.classList.add("sunday");
-    if (weekday === 6) cell.classList.add("saturday");
-
-    if (selectedDate === cellKey) cell.classList.add("selected");
-
-    const dayEl = document.createElement("div");
-    dayEl.textContent = day;
-    dayEl.className = "day-number";
-    cell.appendChild(dayEl);
-
-    const am = document.createElement("div");
-    const pm = document.createElement("div");
-
-    if (calendarDataCache[cellKey]) {
-      const data = calendarDataCache[cellKey];
-      am.textContent = data.time1 ?? data.am ?? "";
-      pm.textContent = data.time2 ?? data.pm ?? "";
+    if (data.time2) {
+      pmDiv.textContent = data.time2;
+    } else if (data.pm) {
+      pmDiv.textContent = `PM:${data.pm}`;
     }
-
-    am.className = "am-label";
-    pm.className = "pm-label";
-    cell.appendChild(am);
-    cell.appendChild(pm);
-
-    cell.addEventListener("click", () => {
-      selectedDate = cellKey;
-      document.querySelectorAll(".calendar-cell.selected").forEach(c => c.classList.remove("selected"));
-      cell.classList.add("selected");
-    });
-
-    row.appendChild(cell);
   }
-
-  calendar.appendChild(row);
 }
 
-async function loadCalendarData(year, month) {
-  calendarDataCache = {};
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const dates = Array.from({ length: daysInMonth }, (_, i) => {
-    const date = new Date(year, month, i + 1);
-    return getDateKey(date);
-  });
-
-  await Promise.all(dates.map(async (dateStr) => {
-    const docRef = doc(db, "water-records", dateStr);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      calendarDataCache[dateStr] = docSnap.data();
-    }
-  }));
-
-  renderCalendar(new Date(year, month));
-}
-
-async function updateFirestore(dateStr, field, value) {
-  const docRef = doc(db, "water-records", dateStr);
-  await setDoc(docRef, { [field]: value }, { merge: true });
-  calendarDataCache[dateStr] = {
-    ...(calendarDataCache[dateStr] || {}),
-    [field]: value,
-  };
-  renderCalendar(currentDate);
-}
-
-async function deleteFieldFromFirestore(dateStr, field) {
-  const docRef = doc(db, "water-records", dateStr);
-  await updateDoc(docRef, { [field]: deleteField() });
-  if (calendarDataCache[dateStr]) delete calendarDataCache[dateStr][field];
-  renderCalendar(currentDate);
-}
-
-amBtn.addEventListener("click", () => {
-  if (!selectedDate) return alert("日付を選択してください");
+async function updateRecord(type) {
   const name = nameInput.value.trim();
   if (!name) return alert("名前を入力してください");
-  updateFirestore(selectedDate, "am", name);
+
+  const dateStr = formatDate(selectedDate);
+  const docRef = doc(db, "water-records", dateStr);
+  await setDoc(docRef, { [type]: name }, { merge: true });
+  renderDayData(selectedDate);
+}
+
+async function deleteRecord(type) {
+  const dateStr = formatDate(selectedDate);
+  const docRef = doc(db, "water-records", dateStr);
+  await updateDoc(docRef, { [type]: deleteField() });
+  renderDayData(selectedDate);
+}
+
+amBtn.addEventListener("click", () => updateRecord("am"));
+pmBtn.addEventListener("click", () => updateRecord("pm"));
+amDeleteBtn.addEventListener("click", () => deleteRecord("am"));
+pmDeleteBtn.addEventListener("click", () => deleteRecord("pm"));
+
+prevMonthBtn.addEventListener("click", () => {
+  currentMonth.setMonth(currentMonth.getMonth() - 1);
+  renderCalendar();
+});
+nextMonthBtn.addEventListener("click", () => {
+  currentMonth.setMonth(currentMonth.getMonth() + 1);
+  renderCalendar();
+});
+todayBtn.addEventListener("click", () => {
+  selectedDate = new Date();
+  currentMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  renderCalendar();
 });
 
-pmBtn.addEventListener("click", () => {
-  if (!selectedDate) return alert("日付を選択してください");
-  const name = nameInput.value.trim();
-  if (!name) return alert("名前を入力してください");
-  updateFirestore(selectedDate, "pm", name);
+window.addEventListener("DOMContentLoaded", async () => {
+  await fetchHolidays();
+  renderCalendar();
 });
-
-amDeleteBtn.addEventListener("click", () => {
-  if (!selectedDate) return alert("日付を選択してください");
-  deleteFieldFromFirestore(selectedDate, "am");
-});
-
-pmDeleteBtn.addEventListener("click", () => {
-  if (!selectedDate) return alert("日付を選択してください");
-  deleteFieldFromFirestore(selectedDate, "pm");
-});
-
-document.getElementById("prevMonth").addEventListener("click", () => {
-  currentDate.setMonth(currentDate.getMonth() - 1);
-  loadCalendarData(currentDate.getFullYear(), currentDate.getMonth());
-});
-
-document.getElementById("nextMonth").addEventListener("click", () => {
-  currentDate.setMonth(currentDate.getMonth() + 1);
-  loadCalendarData(currentDate.getFullYear(), currentDate.getMonth());
-});
-
-document.getElementById("todayBtn").addEventListener("click", () => {
-  currentDate = new Date();
-  selectedDate = getDateKey(currentDate);
-  loadCalendarData(currentDate.getFullYear(), currentDate.getMonth());
-});
-
-loadCalendarData(currentDate.getFullYear(), currentDate.getMonth());
