@@ -158,7 +158,6 @@ async function handleRegister(timeType) {
   }, { merge: true });
   await fetchMonthData(currentDate);
   renderCalendar(currentDate);
-  nameInput.value = "";
 }
 
 async function handleDelete(timeType) {
