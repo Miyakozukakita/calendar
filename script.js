@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import {
-  getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteField, collection
+  getFirestore, doc, getDoc, setDoc, updateDoc, deleteField
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -15,128 +15,141 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let currentDate = new Date();
-let selectedDateStr = getDateStr(currentDate);
-let cachedRecords = {}; // 🔹 すべての記録をキャッシュ
+let selectedDate = new Date();
+let monthlyDataCache = {};
+
+const nameInput = document.getElementById("nameInput");
+const calendar = document.getElementById("calendar");
 
 function getDateStr(date) {
-  const d = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return d.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
-async function fetchAllRecords() {
-  const colRef = collection(db, "water-records");
-  const snapshot = await getDocs(colRef);
-  snapshot.forEach(docSnap => {
-    cachedRecords[docSnap.id] = docSnap.data();
-  });
+function updateHeader(date) {
+  const header = document.getElementById("currentMonth");
+  header.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月`;
 }
 
-function renderCalendar(date) {
+async function fetchMonthData(date) {
   const year = date.getFullYear();
-  const month = date.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDate = new Date(year, month + 1, 0).getDate();
+  const month = date.getMonth() + 1;
 
-  document.getElementById("currentMonth").textContent = `${year}年${month + 1}月`;
-  const calendar = document.getElementById("calendar");
-  calendar.innerHTML = "";
-
-  const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
-  weekDays.forEach(day => {
-    const cell = document.createElement("div");
-    cell.textContent = day;
-    cell.style.fontWeight = "bold";
-    calendar.appendChild(cell);
-  });
-
-  for (let i = 0; i < firstDay.getDay(); i++) {
-    calendar.appendChild(document.createElement("div"));
+  if (monthlyDataCache[`${year}-${month}`]) {
+    return;
   }
 
-  for (let dateNum = 1; dateNum <= lastDate; dateNum++) {
-    const cellDate = new Date(year, month, dateNum);
+  const promises = [];
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
+
+  for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+    const dateStr = getDateStr(d);
+    const ref = doc(db, "water-records", dateStr);
+    promises.push(getDoc(ref).then(docSnap => {
+      monthlyDataCache[dateStr] = docSnap.exists() ? docSnap.data() : {};
+    }));
+  }
+
+  await Promise.all(promises);
+}
+
+function renderCalendar(baseDate) {
+  calendar.innerHTML = "";
+
+  const year = baseDate.getFullYear();
+  const month = baseDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
+
+  const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+  weekDays.forEach((w, i) => {
+    const el = document.createElement("div");
+    el.className = "day";
+    el.textContent = w;
+    if (i === 0) el.classList.add("sunday");
+    if (i === 6) el.classList.add("saturday");
+    calendar.appendChild(el);
+  });
+
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement("div");
+    empty.className = "day";
+    calendar.appendChild(empty);
+  }
+
+  for (let date = 1; date <= lastDate; date++) {
+    const cellDate = new Date(year, month, date);
     const dateStr = getDateStr(cellDate);
+    const data = monthlyDataCache[dateStr] || {};
     const cell = document.createElement("div");
-    cell.className = "calendar-cell";
-    const day = cellDate.getDay();
+    cell.className = "day";
+    if (cellDate.getDay() === 0) cell.classList.add("sunday");
+    if (cellDate.getDay() === 6) cell.classList.add("saturday");
 
-    if (day === 0) cell.classList.add("sunday");
-    else if (day === 6) cell.classList.add("saturday");
-    if (dateStr === getDateStr(new Date())) cell.classList.add("today");
+    const dateLabel = document.createElement("div");
+    dateLabel.className = "date";
+    dateLabel.textContent = date;
+    cell.appendChild(dateLabel);
 
-    cell.innerHTML = `<div>${dateNum}</div>`;
-    cell.dataset.date = dateStr;
-    cell.addEventListener("click", () => {
-      selectedDateStr = dateStr;
-      renderCalendar(currentDate); // 🔁 再描画して強調
-    });
+    if (data.time1) {
+      const amDiv = document.createElement("div");
+      amDiv.className = "am";
+      amDiv.textContent = `AM:${data.time1}`;
+      cell.appendChild(amDiv);
+    }
 
-    const data = cachedRecords[dateStr];
-    if (data) {
-      if (data.am) {
-        const am = document.createElement("span");
-        am.className = "am-label";
-        am.textContent = `AM:${data.am}`;
-        cell.appendChild(am);
-      }
-      if (data.pm) {
-        const pm = document.createElement("span");
-        pm.className = "pm-label";
-        pm.textContent = `PM:${data.pm}`;
-        cell.appendChild(pm);
-      }
+    if (data.time2) {
+      const pmDiv = document.createElement("div");
+      pmDiv.className = "pm";
+      pmDiv.textContent = `PM:${data.time2}`;
+      cell.appendChild(pmDiv);
     }
 
     calendar.appendChild(cell);
   }
+
+  updateHeader(baseDate);
 }
 
-async function updateName(time) {
-  const name = document.getElementById("nameInput").value.trim();
-  if (!name) return alert("名前を入力してください");
-
-  const docRef = doc(db, "water-records", selectedDateStr);
-  await setDoc(docRef, { [time]: name }, { merge: true });
-
-  // 🔄 キャッシュ更新
-  cachedRecords[selectedDateStr] = {
-    ...(cachedRecords[selectedDateStr] || {}),
-    [time]: name
-  };
-  renderCalendar(currentDate);
+function moveMonth(offset) {
+  selectedDate.setMonth(selectedDate.getMonth() + offset);
+  fetchMonthData(selectedDate).then(() => renderCalendar(selectedDate));
 }
 
-async function deleteName(time) {
-  const docRef = doc(db, "water-records", selectedDateStr);
-  await updateDoc(docRef, { [time]: deleteField() });
-
-  // 🔄 キャッシュ更新
-  if (cachedRecords[selectedDateStr]) {
-    delete cachedRecords[selectedDateStr][time];
-  }
-  renderCalendar(currentDate);
+function goToToday() {
+  selectedDate = new Date();
+  fetchMonthData(selectedDate).then(() => renderCalendar(selectedDate));
 }
 
-document.getElementById("amBtn").addEventListener("click", () => updateName("am"));
-document.getElementById("pmBtn").addEventListener("click", () => updateName("pm"));
-document.getElementById("amDeleteBtn").addEventListener("click", () => deleteName("am"));
-document.getElementById("pmDeleteBtn").addEventListener("click", () => deleteName("pm"));
-document.getElementById("prevMonth").addEventListener("click", () => {
-  currentDate.setMonth(currentDate.getMonth() - 1);
-  renderCalendar(currentDate);
-});
-document.getElementById("nextMonth").addEventListener("click", () => {
-  currentDate.setMonth(currentDate.getMonth() + 1);
-  renderCalendar(currentDate);
-});
-document.getElementById("todayBtn").addEventListener("click", () => {
-  currentDate = new Date();
-  selectedDateStr = getDateStr(currentDate);
-  renderCalendar(currentDate);
-});
+async function updateFirestore(field, value) {
+  const dateStr = getDateStr(selectedDate);
+  const ref = doc(db, "water-records", dateStr);
+  await setDoc(ref, { [field]: value }, { merge: true });
+  monthlyDataCache[dateStr] = { ...(monthlyDataCache[dateStr] || {}), [field]: value };
+  renderCalendar(selectedDate);
+}
 
-(async () => {
-  await fetchAllRecords();
-  renderCalendar(currentDate);
-})();
+async function deleteFromFirestore(field) {
+  const dateStr = getDateStr(selectedDate);
+  const ref = doc(db, "water-records", dateStr);
+  await updateDoc(ref, { [field]: deleteField() });
+  delete monthlyDataCache[dateStr]?.[field];
+  renderCalendar(selectedDate);
+}
+
+document.getElementById("prevMonth").onclick = () => moveMonth(-1);
+document.getElementById("nextMonth").onclick = () => moveMonth(1);
+document.getElementById("todayBtn").onclick = () => goToToday();
+
+document.getElementById("amBtn").onclick = () => {
+  const name = nameInput.value.trim();
+  if (name) updateFirestore("am", name);
+};
+document.getElementById("pmBtn").onclick = () => {
+  const name = nameInput.value.trim();
+  if (name) updateFirestore("pm", name);
+};
+document.getElementById("amDeleteBtn").onclick = () => deleteFromFirestore("am");
+document.getElementById("pmDeleteBtn").onclick = () => deleteFromFirestore("pm");
+
+fetchMonthData(selectedDate).then(() => renderCalendar(selectedDate));
