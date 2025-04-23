@@ -1,144 +1,125 @@
-// script.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc, deleteField
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBR7AMsGD3P0lUfjvRHCHjMG3XmK12K4IU",
+  authDomain: "miyakozuka-89982.firebaseapp.com",
+  projectId: "miyakozuka-89982",
+  storageBucket: "miyakozuka-89982.appspot.com",
+  messagingSenderId: "80890323227",
+  appId: "1:80890323227:web:f5d79ddbddbe480f8a33be"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 let currentDate = new Date();
-let selectedDate = new Date();
-let holidays = {};
+let selectedDateStr = getDateStr(currentDate);
 
-const calendar = document.getElementById("calendar");
-const currentMonth = document.getElementById("currentMonth");
-const prevBtn = document.getElementById("prevMonth");
-const nextBtn = document.getElementById("nextMonth");
-const todayBtn = document.getElementById("todayBtn");
-const nameInput = document.getElementById("nameInput");
-const amBtn = document.getElementById("amBtn");
-const pmBtn = document.getElementById("pmBtn");
-const amDeleteBtn = document.getElementById("amDeleteBtn");
-const pmDeleteBtn = document.getElementById("pmDeleteBtn");
-
-function getDateKey(date) {
-  return date.toISOString().split("T")[0];
+function getDateStr(date) {
+  const d = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return d.toISOString().split('T')[0];
 }
 
-const waterData = {};
+function renderCalendar(date) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDate = new Date(year, month + 1, 0).getDate();
 
-async function fetchHolidays(year) {
-  try {
-    const res = await fetch(`https://holidays-jp.github.io/api/v1/${year}/date.json`);
-    if (!res.ok) throw new Error("祝日データ取得失敗");
-    holidays = await res.json();
-    renderCalendar(currentDate);
-  } catch (err) {
-    console.error("祝日取得エラー:", err);
-  }
-}
-
-function renderCalendar(baseDate) {
+  document.getElementById("currentMonth").textContent = `${year}年${month + 1}月`;
+  const calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
-  const year = baseDate.getFullYear();
-  const month = baseDate.getMonth();
-  currentMonth.textContent = `${year}年${month + 1}月`;
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-  for (let i = 0; i < 7; i++) {
-    const weekday = document.createElement("div");
-    weekday.textContent = weekdays[i];
-    weekday.className = "weekday";
-    if (i === 0) weekday.classList.add("sunday");
-    if (i === 6) weekday.classList.add("saturday");
-    calendar.appendChild(weekday);
-  }
-
-  for (let i = 0; i < firstDay; i++) {
-    const empty = document.createElement("div");
-    empty.className = "day empty";
-    calendar.appendChild(empty);
-  }
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    const dateKey = getDateKey(date);
-
+  const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+  weekDays.forEach(day => {
     const cell = document.createElement("div");
-    cell.className = "day";
-    if (date.toDateString() === new Date().toDateString()) {
-      cell.classList.add("today");
-    }
-    if (holidays[dateKey]) {
-      cell.classList.add("holiday");
-      cell.title = holidays[dateKey];
-    } else if (date.getDay() === 0) {
-      cell.classList.add("sunday");
-    } else if (date.getDay() === 6) {
-      cell.classList.add("saturday");
-    }
-
     cell.textContent = day;
-    cell.dataset.date = dateKey;
+    cell.style.fontWeight = "bold";
+    calendar.appendChild(cell);
+  });
+
+  for (let i = 0; i < firstDay.getDay(); i++) {
+    calendar.appendChild(document.createElement("div"));
+  }
+
+  for (let dateNum = 1; dateNum <= lastDate; dateNum++) {
+    const cellDate = new Date(year, month, dateNum);
+    const cell = document.createElement("div");
+    cell.className = "calendar-cell";
+    const dateStr = getDateStr(cellDate);
+    const day = cellDate.getDay();
+
+    if (day === 0) cell.classList.add("sunday");
+    else if (day === 6) cell.classList.add("saturday");
+    if (dateStr === getDateStr(new Date())) cell.classList.add("today");
+
+    cell.innerHTML = `<div>${dateNum}</div>`;
+    cell.dataset.date = dateStr;
     cell.addEventListener("click", () => {
-      selectedDate = date;
-      renderCalendar(currentDate);
+      selectedDateStr = dateStr;
+      renderCalendar(date);
     });
 
-    const record = waterData[dateKey];
-    if (record) {
-      const am = document.createElement("div");
-      am.className = "am";
-      am.textContent = record.am ? `AM: ${record.am}` : "";
-      const pm = document.createElement("div");
-      pm.className = "pm";
-      pm.textContent = record.pm ? `PM: ${record.pm}` : "";
-      cell.appendChild(am);
-      cell.appendChild(pm);
-    }
-
+    loadNamesToCell(dateStr, cell);
     calendar.appendChild(cell);
   }
 }
 
-function register(name, time) {
-  const key = getDateKey(selectedDate);
-  if (!waterData[key]) waterData[key] = {};
-  waterData[key][time] = name;
-  renderCalendar(currentDate);
-}
-
-function removeRecord(time) {
-  const key = getDateKey(selectedDate);
-  if (waterData[key]) {
-    delete waterData[key][time];
-    if (!waterData[key].am && !waterData[key].pm) delete waterData[key];
+async function loadNamesToCell(dateStr, cell) {
+  const docRef = doc(db, "water-records", dateStr);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    if (data.am) {
+      const am = document.createElement("span");
+      am.className = "am-label";
+      am.textContent = `AM: ${data.am}`;
+      cell.appendChild(am);
+    }
+    if (data.pm) {
+      const pm = document.createElement("span");
+      pm.className = "pm-label";
+      pm.textContent = `PM: ${data.pm}`;
+      cell.appendChild(pm);
+    }
   }
-  renderCalendar(currentDate);
 }
 
-amBtn.addEventListener("click", () => {
-  const name = nameInput.value.trim();
-  if (name) register(name, "am");
-});
+function updateName(time) {
+  const name = document.getElementById("nameInput").value.trim();
+  if (!name) return alert("名前を入力してください");
+  const docRef = doc(db, "water-records", selectedDateStr);
+  setDoc(docRef, { [time]: name }, { merge: true }).then(() => {
+    renderCalendar(currentDate);
+  });
+}
 
-pmBtn.addEventListener("click", () => {
-  const name = nameInput.value.trim();
-  if (name) register(name, "pm");
-});
+function deleteName(time) {
+  const docRef = doc(db, "water-records", selectedDateStr);
+  updateDoc(docRef, { [time]: deleteField() }).then(() => {
+    renderCalendar(currentDate);
+  });
+}
 
-amDeleteBtn.addEventListener("click", () => removeRecord("am"));
-pmDeleteBtn.addEventListener("click", () => removeRecord("pm"));
-
-prevBtn.addEventListener("click", () => {
+document.getElementById("amBtn").addEventListener("click", () => updateName("am"));
+document.getElementById("pmBtn").addEventListener("click", () => updateName("pm"));
+document.getElementById("amDeleteBtn").addEventListener("click", () => deleteName("am"));
+document.getElementById("pmDeleteBtn").addEventListener("click", () => deleteName("pm"));
+document.getElementById("prevMonth").addEventListener("click", () => {
   currentDate.setMonth(currentDate.getMonth() - 1);
-  fetchHolidays(currentDate.getFullYear());
+  renderCalendar(currentDate);
 });
-
-nextBtn.addEventListener("click", () => {
+document.getElementById("nextMonth").addEventListener("click", () => {
   currentDate.setMonth(currentDate.getMonth() + 1);
-  fetchHolidays(currentDate.getFullYear());
+  renderCalendar(currentDate);
 });
-
-todayBtn.addEventListener("click", () => {
+document.getElementById("todayBtn").addEventListener("click", () => {
   currentDate = new Date();
-  fetchHolidays(currentDate.getFullYear());
+  selectedDateStr = getDateStr(currentDate);
+  renderCalendar(currentDate);
 });
 
-fetchHolidays(currentDate.getFullYear());
+renderCalendar(currentDate);
