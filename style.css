@@ -11,14 +11,6 @@ h1 {
   margin-bottom: 1em;
 }
 
-input[type="date"] {
-  padding: 10px;
-  font-size: 1em;
-  margin-bottom: 1em;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
 #calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -33,10 +25,16 @@ input[type="date"] {
   padding: 10px;
   border-radius: 5px;
   font-size: 0.9em;
+  cursor: pointer;
 }
 
 .watered {
   background-color: #b2f2bb;
+}
+
+.selected {
+  border: 2px solid #4caf50;
+  font-weight: bold;
 }
 
 button {
@@ -51,4 +49,13 @@ button {
 
 button:hover {
   background-color: #45a049;
+}
+
+input[type="text"] {
+  padding: 10px;
+  font-size: 1em;
+  margin: 0.5em 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 60%;
 }
