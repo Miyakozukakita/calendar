@@ -75,4 +75,122 @@ function renderCalendar(date) {
 
     const cellDate = new Date(year, month, day);
     const cellKey = getDateKey(cellDate);
-    const cell =
+    const cell = document.createElement("div");
+    cell.className = "calendar-cell";
+    cell.dataset.date = cellKey;
+
+    const weekday = cellDate.getDay();
+    if (weekday === 0) cell.classList.add("sunday");
+    if (weekday === 6) cell.classList.add("saturday");
+
+    if (selectedDate === cellKey) cell.classList.add("selected");
+
+    const dayEl = document.createElement("div");
+    dayEl.textContent = day;
+    dayEl.className = "day-number";
+    cell.appendChild(dayEl);
+
+    const am = document.createElement("div");
+    const pm = document.createElement("div");
+
+    if (calendarDataCache[cellKey]) {
+      const data = calendarDataCache[cellKey];
+      am.textContent = data.time1 ?? data.am ?? "";
+      pm.textContent = data.time2 ?? data.pm ?? "";
+    }
+
+    am.className = "am-label";
+    pm.className = "pm-label";
+    cell.appendChild(am);
+    cell.appendChild(pm);
+
+    cell.addEventListener("click", () => {
+      selectedDate = cellKey;
+      document.querySelectorAll(".calendar-cell.selected").forEach(c => c.classList.remove("selected"));
+      cell.classList.add("selected");
+    });
+
+    row.appendChild(cell);
+  }
+
+  calendar.appendChild(row);
+}
+
+async function loadCalendarData(year, month) {
+  calendarDataCache = {};
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const dates = Array.from({ length: daysInMonth }, (_, i) => {
+    const date = new Date(year, month, i + 1);
+    return getDateKey(date);
+  });
+
+  await Promise.all(dates.map(async (dateStr) => {
+    const docRef = doc(db, "water-records", dateStr);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      calendarDataCache[dateStr] = docSnap.data();
+    }
+  }));
+
+  renderCalendar(new Date(year, month));
+}
+
+async function updateFirestore(dateStr, field, value) {
+  const docRef = doc(db, "water-records", dateStr);
+  await setDoc(docRef, { [field]: value }, { merge: true });
+  calendarDataCache[dateStr] = {
+    ...(calendarDataCache[dateStr] || {}),
+    [field]: value,
+  };
+  renderCalendar(currentDate);
+}
+
+async function deleteFieldFromFirestore(dateStr, field) {
+  const docRef = doc(db, "water-records", dateStr);
+  await updateDoc(docRef, { [field]: deleteField() });
+  if (calendarDataCache[dateStr]) delete calendarDataCache[dateStr][field];
+  renderCalendar(currentDate);
+}
+
+amBtn.addEventListener("click", () => {
+  if (!selectedDate) return alert("日付を選択してください");
+  const name = nameInput.value.trim();
+  if (!name) return alert("名前を入力してください");
+  updateFirestore(selectedDate, "am", name);
+});
+
+pmBtn.addEventListener("click", () => {
+  if (!selectedDate) return alert("日付を選択してください");
+  const name = nameInput.value.trim();
+  if (!name) return alert("名前を入力してください");
+  updateFirestore(selectedDate, "pm", name);
+});
+
+amDeleteBtn.addEventListener("click", () => {
+  if (!selectedDate) return alert("日付を選択してください");
+  deleteFieldFromFirestore(selectedDate, "am");
+});
+
+pmDeleteBtn.addEventListener("click", () => {
+  if (!selectedDate) return alert("日付を選択してください");
+  deleteFieldFromFirestore(selectedDate, "pm");
+});
+
+document.getElementById("prevMonth").addEventListener("click", () => {
+  currentDate.setMonth(currentDate.getMonth() - 1);
+  loadCalendarData(currentDate.getFullYear(), currentDate.getMonth());
+});
+
+document.getElementById("nextMonth").addEventListener("click", () => {
+  currentDate.setMonth(currentDate.getMonth() + 1);
+  loadCalendarData(currentDate.getFullYear(), currentDate.getMonth());
+});
+
+document.getElementById("todayBtn").addEventListener("click", () => {
+  currentDate = new Date();
+  selectedDate = getDateKey(currentDate);
+  loadCalendarData(currentDate.getFullYear(), currentDate.getMonth());
+});
+
+loadCalendarData(currentDate.getFullYear(), currentDate.getMonth());
