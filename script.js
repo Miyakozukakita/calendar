@@ -23,7 +23,7 @@ const db = getFirestore(app);
 
 let currentDate = new Date();
 let selectedDate = new Date();
-let calendarData = {}; // キャッシュ
+let calendarData = {};
 
 const calendar = document.getElementById("calendar");
 const currentMonth = document.getElementById("currentMonth");
@@ -31,7 +31,7 @@ const nameInput = document.getElementById("nameInput");
 
 function getDateKey(date) {
   const d = new Date(date);
-  d.setHours(d.getHours() + 9);
+  d.setHours(d.getHours() + 9); // JSTに補正
   return d.toISOString().split("T")[0];
 }
 
@@ -48,7 +48,7 @@ function isSameDate(d1, d2) {
 }
 
 async function fetchMonthData(date) {
-  calendarData = {}; // クリア
+  calendarData = {};
   const year = date.getFullYear();
   const month = date.getMonth();
   const first = new Date(year, month, 1);
@@ -112,7 +112,7 @@ function renderCalendar(date) {
         am.textContent = info.time1;
         am.className = "am";
         cell.appendChild(am);
-      }else if (info.am) {
+      } else if (info.am) {
         const am = document.createElement("div");
         am.textContent = `AM:${info.am}`;
         am.className = "am";
@@ -124,7 +124,7 @@ function renderCalendar(date) {
         pm.textContent = info.time2;
         pm.className = "pm";
         cell.appendChild(pm);
-      }else if (info.pm) {
+      } else if (info.pm) {
         const pm = document.createElement("div");
         pm.textContent = `PM:${info.pm}`;
         pm.className = "pm";
@@ -142,6 +142,11 @@ function renderCalendar(date) {
   }
 }
 
+async function updateCalendar(date) {
+  await fetchMonthData(date);
+  renderCalendar(date);
+}
+
 async function handleRegister(timeType) {
   const name = nameInput.value.trim();
   if (!name) return;
@@ -150,8 +155,7 @@ async function handleRegister(timeType) {
   await setDoc(docRef, {
     [timeType === "am" ? "nameAM" : "namePM"]: name
   }, { merge: true });
-  await fetchMonthData(currentDate);
-  renderCalendar(currentDate);
+  await updateCalendar(currentDate);
   nameInput.value = "";
 }
 
@@ -161,31 +165,26 @@ async function handleDelete(timeType) {
   await updateDoc(docRef, {
     [timeType === "am" ? "nameAM" : "namePM"]: deleteField()
   });
-  await fetchMonthData(currentDate);
-  renderCalendar(currentDate);
+  await updateCalendar(currentDate);
 }
 
-// イベント登録
-renderCalendar(currentDate);
-fetchMonthData(currentDate).then(() => renderCalendar(currentDate));
+// 初期化
+updateCalendar(currentDate);
 
 document.getElementById("amBtn").addEventListener("click", () => handleRegister("am"));
 document.getElementById("pmBtn").addEventListener("click", () => handleRegister("pm"));
 document.getElementById("amDeleteBtn").addEventListener("click", () => handleDelete("am"));
 document.getElementById("pmDeleteBtn").addEventListener("click", () => handleDelete("pm"));
-document.getElementById("prevMonth").addEventListener("click", async () => {
+document.getElementById("prevMonth").addEventListener("click", () => {
   currentDate.setMonth(currentDate.getMonth() - 1);
-  await fetchMonthData(currentDate);
-  renderCalendar(currentDate);
+  updateCalendar(currentDate);
 });
-document.getElementById("nextMonth").addEventListener("click", async () => {
+document.getElementById("nextMonth").addEventListener("click", () => {
   currentDate.setMonth(currentDate.getMonth() + 1);
-  await fetchMonthData(currentDate);
-  renderCalendar(currentDate);
+  updateCalendar(currentDate);
 });
-document.getElementById("todayBtn").addEventListener("click", async () => {
+document.getElementById("todayBtn").addEventListener("click", () => {
   currentDate = new Date();
   selectedDate = new Date();
-  await fetchMonthData(currentDate);
-  renderCalendar(currentDate);
+  updateCalendar(currentDate);
 });
