@@ -2,26 +2,14 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>水やり記録アプリ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>水やりカレンダー</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1 id="current-date">本日: </h1>
-
-    <div class="date-select">
-      <label for="date-picker">表示する日付：</label>
-      <input type="date" id="date-picker" />
-    </div>
-
-    <div class="button-block">
-      <button id="water-btn">水やり完了</button>
-    </div>
-
-    <div id="records"></div>
-  </div>
-
-  <script type="module" src="script.js"></script>
+  <h1>水やり記録カレンダー</h1>
+  <div id="calendar"></div>
+  <button id="waterBtn">水やり完了</button>
+  <script src="script.js"></script>
 </body>
 </html>
