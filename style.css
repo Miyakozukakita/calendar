@@ -11,6 +11,15 @@ h1 {
   margin-bottom: 1em;
 }
 
+#calendar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.5em;
+  gap: 10px;
+  font-size: 1.2em;
+}
+
 #calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -32,15 +41,19 @@ h1 {
 }
 
 .day .am {
-  color: #007bff; /* 青 */
+  color: #007bff;
   display: block;
   font-size: 0.75em;
 }
 
 .day .pm {
-  color: #e53935; /* 赤 */
+  color: #e53935;
   display: block;
   font-size: 0.75em;
+}
+
+.day.holiday {
+  color: red;
 }
 
 .selected {
